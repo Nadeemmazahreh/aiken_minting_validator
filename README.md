@@ -1,0 +1,1 @@
+# aiken_minting_validator
