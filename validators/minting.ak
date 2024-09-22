@@ -45,10 +45,12 @@ validator nft(output_reference: OutputReference) {
         trace @"Is Minting"
         consume_utxo(inputs, output_reference)?
       }
+
       -1 -> {
         trace @"Is Burning"
         True
       }
+
       _ -> {
         trace @"Invalid Qty"
         False
