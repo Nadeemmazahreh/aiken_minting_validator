@@ -1,10 +1,12 @@
-use aiken_minting_validator/functions.{consume_utxo, mint_qty}
-use aiken_minting_validator/types.{Redeemer}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
+use modules/functions.{consume_utxo, mint_qty}
+use modules/types.{MyRedeemer}
 
 validator always_true {
-  mint(_redeemer: Void, _policy_id: PolicyId, _self: Transaction) {
+  /// ☝🏻validator:
+  /// https://aiken-lang.org/language-tour/validators
+  mint(_redeemer: Void, _policy_id: PolicyId, _tx: Transaction) {
     True
   }
 
@@ -14,7 +16,7 @@ validator always_true {
 }
 
 validator check_redeemer {
-  mint(redeemer: Int, _policy_id: PolicyId, _self: Transaction) {
+  mint(redeemer: Int, _policy_id: PolicyId, _tx: Transaction) {
     (redeemer == 42)?
   }
 
@@ -24,8 +26,8 @@ validator check_redeemer {
 }
 
 validator check_redeemer_2 {
-  mint(redeemer: Redeemer, _policy_id: PolicyId, _self: Transaction) {
-    let Redeemer { key, value } = redeemer
+  mint(redeemer: MyRedeemer, _policy_id: PolicyId, _tx: Transaction) {
+    let MyRedeemer { key, value } = redeemer
     and {
       (key == "Hello, World!")?,
       (value == 42)?,
@@ -38,8 +40,10 @@ validator check_redeemer_2 {
 }
 
 validator nft(output_reference: OutputReference) {
-  mint(_redeemer: Void, policy_id: PolicyId, self: Transaction) {
-    let Transaction { mint, inputs, .. } = self
+  mint(_redeemer: Void, policy_id: PolicyId, tx: Transaction) {
+    let Transaction { mint, inputs, .. } = tx
+    //                 ☝🏻Transaction.mint:
+    // https://aiken-lang.github.io/stdlib/cardano/transaction.html#Transaction:~:text=%3A%20Lovelace%2C-,mint,-%3A%20Value%2C
     when mint |> mint_qty(policy_id) is {
       1 -> {
         trace @"Is Minting"
