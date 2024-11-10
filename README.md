@@ -1,55 +1,50 @@
 # aiken_minting_validator
 
-Write validators in the `validators` folder, and supporting functions in the `lib` folder using `.ak` as a file extension.
+This showcase project contains 4 minting validators:
 
-For example, as `validators/always_true.ak`
+- `always_true`
+- `check_redeemer`
+- `check_redeemer_2`
+- `nft`
 
-```aiken
-validator my_first_validator {
-  spend(_datum: Option<Data>, _redeemer: Data, _output_reference: Data, _context: Data) {
-    True
-  }
+To run the offchain:
+
+1. Create a `.env.local` file
+2. Run `pnpm dev`
+
+Your `.env.local` file must contain:
+
+```
+NEXT_PUBLIC_BF_URL=https://cardano-preprod.blockfrost.io/api/v0
+NEXT_PUBLIC_BF_PID=preprodYOUR_PREPROD_BLOCKFROST_PROJECT_ID
+NEXT_PUBLIC_CARDANO_NETWORK=Preprod
+```
+
+To install `pnpm` run `npm i -g pnpm`.
+
+## `always_true`
+
+This is an introduction to minting validator, akin to hello-world in other programming languages. This validator will allow anyone to mint/burn tokens at anytime.
+
+## `check_redeemer`
+
+This is a trivial minting validator, anyone is allowed to mint/burn tokens at anytime as long as they provide the redeemer value of 42.
+
+## `check_redeemer_2`
+
+This is similar to `check_redeemer` but the redeemer is a custom type instead of a primitive type, defined as:
+
+```gleam
+pub type MyRedeemer {
+  key: ByteArray,
+  value: Int,
 }
 ```
 
-## Building
+Take a look at the offchain code to see how we can construct a redeemer of this type.
 
-```sh
-aiken build
-```
+## `nft`
 
-## Testing
+We explore the concept of "One-shot" Minting policies to enforce token uniqueness.
 
-You can write tests in any module using the `test` keyword. For example:
-
-```aiken
-test foo() {
-  1 + 1 == 2
-}
-```
-
-To run all tests, simply do:
-
-```sh
-aiken check
-```
-
-To run only tests matching the string `foo`, do:
-
-```sh
-aiken check -m foo
-```
-
-## Documentation
-
-If you're writing a library, you might want to generate an HTML documentation for it.
-
-Use:
-
-```sh
-aiken docs
-```
-
-## Resources
-
-Find more on the [Aiken's user manual](https://aiken-lang.org).
+See: https://aiken-lang.org/fundamentals/common-design-patterns#one-shot-minting-policies
