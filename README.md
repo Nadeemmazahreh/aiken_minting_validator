@@ -7,12 +7,12 @@ This showcase project contains 4 minting validators:
 - `check_redeemer_2`
 - `nft`
 
-Install `pnpm` if you have not by running `npm i -g pnpm`, and then go to [`./offchain`](./offchain):
+Install `pnpm` if you have not by running `npm i -g pnpm`, and then go to [`offchain`](./offchain):
 
-- Run `pnpm i` if you have never run the `offchain`.
-- Run `pnpm dev` to run the `offchain`.
+- Run `pnpm i` if you have never run the `offchain`
+- Run `pnpm dev` to run the `offchain`
 
-Go to http://localhost:3000
+Open http://localhost:3000
 
 ## `always_true`
 
