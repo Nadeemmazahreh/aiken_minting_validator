@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
   },
   "dependencies": {
-    "@lucid-evolution/lucid": "^0.4.4",
+    "@lucid-evolution/lucid": "^0.4.10",
     "@nextui-org/accordion": "^2.2.5",
     "@nextui-org/button": "2.2.7",
     "@nextui-org/code": "2.2.4",
