@@ -19,9 +19,9 @@ const Script = {
     "58b801010032323232323232323225333003323232323253330083370e900018051baa0011325333333010003153330093370e900018059baa0031533300d300c37540062944020020020020020020dd7180698059baa00116300c300d003300b002300a002300a001300637540022930a998022491856616c696461746f722072657475726e65642066616c73650013656153300249010f5f72656465656d65723a20566f696400165734ae7155ceaab9e5573eae855d12ba41"
   ),
 
-  MintCheckRedeemer: applyDoubleCborEncoding(
-    "58c4010100323232323232323225333003323232323253330083370e900018051baa001132533333300f003008008008153330093370e6eb400d205414a22a660149211672656465656d6572203d3d203432203f2046616c73650014a00106eb8c030c02cdd50008b1805980600198050011804801180480098031baa001149854cc0112411856616c696461746f722072657475726e65642066616c73650013656153300249010d72656465656d65723a20496e7400165734ae7155ceaab9e5742ae895d201"
-  ),
+  // MintCheckRedeemer: applyDoubleCborEncoding(
+  //   "58c4010100323232323232323225333003323232323253330083370e900018051baa001132533333300f003008008008153330093370e6eb400d205414a22a660149211672656465656d6572203d3d203432203f2046616c73650014a00106eb8c030c02cdd50008b1805980600198050011804801180480098031baa001149854cc0112411856616c696461746f722072657475726e65642066616c73650013656153300249010d72656465656d65723a20496e7400165734ae7155ceaab9e5742ae895d201"
+  // ),
 
   MintCheckRedeemer2: applyDoubleCborEncoding(
     "59018001010032323232323232323225333003323232323253330083370e900018051baa0011325333333010003153330093370e900018059baa003132533300e001009132533333301200100a00a00a00a13232533301100100c132533333301500100d00d00d1325333013301500313232533301153330113371e6eb8c05800922010d48656c6c6f2c20576f726c64210014a22a660249211e6b6579203d3d202248656c6c6f2c20576f726c642122203f2046616c73650014a02a66602266e1c005205414a22a660249211376616c7565203d3d203432203f2046616c73650014a02940dd6980a980b00098091baa00900e375a00201a602400260240066eb8004c03c004c030dd50018040040040040041bae300d300b37540022c6018601a006601600460140046014002600c6ea800452615330044911856616c696461746f722072657475726e65642066616c73650013656153300249011472656465656d65723a204d7952656465656d657200165734ae7155ceaab9e5573eae855d12ba41"
@@ -107,61 +107,61 @@ export default function Dashboard(props: {
       },
     },
 
-    CheckRedeemer: {
-      mint: async () => {
-        try {
-          const mintingValidator: MintingPolicy = { type: "PlutusV3", script: Script.MintCheckRedeemer };
+    // CheckRedeemer: {
+    //   mint: async () => {
+    //     try {
+    //       const mintingValidator: MintingPolicy = { type: "PlutusV3", script: Script.MintCheckRedeemer };
 
-          const policyID = mintingPolicyToId(mintingValidator);
-          const assetName = "Check Redeemer Token";
+    //       const policyID = mintingPolicyToId(mintingValidator);
+    //       const assetName = "Check Redeemer Token";
 
-          const mintedAssets = { [`${policyID}${fromText(assetName)}`]: 200n };
-          const redeemer = Data.to(42n);
+    //       const mintedAssets = { [`${policyID}${fromText(assetName)}`]: 200n };
+    //       const redeemer = Data.to(42n);
 
-          const tx = await lucid
-            .newTx()
-            .mintAssets(mintedAssets, redeemer)
-            .attach.MintingPolicy(mintingValidator)
-            .attachMetadata(
-              721,
-              // https://github.com/cardano-foundation/CIPs/tree/master/CIP-0025#version-1
-              {
-                [policyID]: {
-                  [assetName]: {
-                    name: assetName,
-                    image: "https://avatars.githubusercontent.com/u/2",
-                  },
-                },
-              }
-            )
-            .complete();
+    //       const tx = await lucid
+    //         .newTx()
+    //         .mintAssets(mintedAssets, redeemer)
+    //         .attach.MintingPolicy(mintingValidator)
+    //         .attachMetadata(
+    //           721,
+    //           // https://github.com/cardano-foundation/CIPs/tree/master/CIP-0025#version-1
+    //           {
+    //             [policyID]: {
+    //               [assetName]: {
+    //                 name: assetName,
+    //                 image: "https://avatars.githubusercontent.com/u/2",
+    //               },
+    //             },
+    //           }
+    //         )
+    //         .complete();
 
-          submitTx(tx).then(setActionResult).catch(onError);
-        } catch (error) {
-          onError(error);
-        }
-      },
+    //       submitTx(tx).then(setActionResult).catch(onError);
+    //     } catch (error) {
+    //       onError(error);
+    //     }
+    //   },
 
-      burn: async () => {
-        try {
-          const mintingValidator: MintingPolicy = { type: "PlutusV3", script: Script.MintCheckRedeemer };
+    //   burn: async () => {
+    //     try {
+    //       const mintingValidator: MintingPolicy = { type: "PlutusV3", script: Script.MintCheckRedeemer };
 
-          const policyID = mintingPolicyToId(mintingValidator);
-          const assetName = "Check Redeemer Token";
-          const assetUnit = `${policyID}${fromText(assetName)}`;
-          const burnedAssets = { [assetUnit]: -200n };
-          const redeemer = Data.to(42n);
+    //       const policyID = mintingPolicyToId(mintingValidator);
+    //       const assetName = "Check Redeemer Token";
+    //       const assetUnit = `${policyID}${fromText(assetName)}`;
+    //       const burnedAssets = { [assetUnit]: -200n };
+    //       const redeemer = Data.to(42n);
 
-          const utxos = await lucid.utxosAtWithUnit(address, assetUnit);
+    //       const utxos = await lucid.utxosAtWithUnit(address, assetUnit);
 
-          const tx = await lucid.newTx().collectFrom(utxos).mintAssets(burnedAssets, redeemer).attach.MintingPolicy(mintingValidator).complete();
+    //       const tx = await lucid.newTx().collectFrom(utxos).mintAssets(burnedAssets, redeemer).attach.MintingPolicy(mintingValidator).complete();
 
-          submitTx(tx).then(setActionResult).catch(onError);
-        } catch (error) {
-          onError(error);
-        }
-      },
-    },
+    //       submitTx(tx).then(setActionResult).catch(onError);
+    //     } catch (error) {
+    //       onError(error);
+    //     }
+    //   },
+    // },
 
     CheckRedeemer2: {
       mint: async () => {
@@ -320,7 +320,7 @@ export default function Dashboard(props: {
         </AccordionItem>
 
         {/* Check Redeemer */}
-        <AccordionItem key="2" aria-label="Accordion 2" title="Check Redeemer">
+        {/* <AccordionItem key="2" aria-label="Accordion 2" title="Check Redeemer">
           <div className="flex flex-wrap gap-2 mb-2">
             <Button
               className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg capitalize"
@@ -337,7 +337,7 @@ export default function Dashboard(props: {
               Burn
             </Button>
           </div>
-        </AccordionItem>
+        </AccordionItem> */}
 
         {/* Check Redeemer2 */}
         <AccordionItem key="3" aria-label="Accordion 3" title="Check Redeemer2">
