@@ -12,60 +12,6 @@
   },
   "validators": [
     {
-      "title": "minting.check_redeemer_2.mint",
-      "redeemer": {
-        "title": "redeemer",
-        "schema": {
-          "$ref": "#/definitions/modules~1types~1MyRedeemer"
-        }
-      },
-      "compiledCode": "58ba01010029800aba2aba1aab9faab9eaab9dab9a48888896600264653001300700198039804000cc01c0092225980099b8748000c01cdd500144c96600266e1d200030083754009132323322598009808001c4c96600266e3cdd71808000a4410d48656c6c6f2c20576f726c642100899b87375a60206022002902a45282018300d37540111640386eb4c034004dd71806801180680098049baa0048b200e375c601460106ea800a2c8030600e00260066ea801e29344d95900101",
-      "hash": "9a5f4ebe232213e14f22e4801edc2204b61cbc740f0e2fe937af981f"
-    },
-    {
-      "title": "minting.check_redeemer_2.else",
-      "redeemer": {
-        "schema": {}
-      },
-      "compiledCode": "58ba01010029800aba2aba1aab9faab9eaab9dab9a48888896600264653001300700198039804000cc01c0092225980099b8748000c01cdd500144c96600266e1d200030083754009132323322598009808001c4c96600266e3cdd71808000a4410d48656c6c6f2c20576f726c642100899b87375a60206022002902a45282018300d37540111640386eb4c034004dd71806801180680098049baa0048b200e375c601460106ea800a2c8030600e00260066ea801e29344d95900101",
-      "hash": "9a5f4ebe232213e14f22e4801edc2204b61cbc740f0e2fe937af981f"
-    },
-    {
-      "title": "minting.nft.mint",
-      "redeemer": {
-        "title": "_redeemer",
-        "schema": {
-          "$ref": "#/definitions/Void"
-        }
-      },
-      "parameters": [
-        {
-          "title": "output_reference",
-          "schema": {
-            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
-          }
-        }
-      ],
-      "compiledCode": "590155010100229800aba2aba1aba0aab9faab9eaab9dab9a488888896600264646644b30013370e900018031baa0018999119912cc004cdc3a4004005132330010013758601e00844b30010018a508acc004cdd7980818069baa30100010138a518998010011808800a016403915980099b874800400a29462941009201232598009807000c4dd698051806800c5900b192cc004cdc3a400460126ea8006297adef6c6089bab300d300a37540028040c8cc004004dd598069807180718071807001112cc0040062980103d87a8000899192cc004cdc8803000c56600266e3c018006266e9520003300f300d0024bd7045300103d87a8000402d1330040043011003402c6eb8c02c004c03800500c2cc004cdc3a400060106ea80122b300130093754009149a2c80522c8038dd7180518039baa001300737546014009164014601000260106012002601000260066ea802229344d9590011",
-      "hash": "34c54207e86aa026192222b40cc6a22e8fdef3a2d2db592337bdd8b2"
-    },
-    {
-      "title": "minting.nft.else",
-      "redeemer": {
-        "schema": {}
-      },
-      "parameters": [
-        {
-          "title": "output_reference",
-          "schema": {
-            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
-          }
-        }
-      ],
-      "compiledCode": "590155010100229800aba2aba1aba0aab9faab9eaab9dab9a488888896600264646644b30013370e900018031baa0018999119912cc004cdc3a4004005132330010013758601e00844b30010018a508acc004cdd7980818069baa30100010138a518998010011808800a016403915980099b874800400a29462941009201232598009807000c4dd698051806800c5900b192cc004cdc3a400460126ea8006297adef6c6089bab300d300a37540028040c8cc004004dd598069807180718071807001112cc0040062980103d87a8000899192cc004cdc8803000c56600266e3c018006266e9520003300f300d0024bd7045300103d87a8000402d1330040043011003402c6eb8c02c004c03800500c2cc004cdc3a400060106ea80122b300130093754009149a2c80522c8038dd7180518039baa001300737546014009164014601000260106012002601000260066ea802229344d9590011",
-      "hash": "34c54207e86aa026192222b40cc6a22e8fdef3a2d2db592337bdd8b2"
-    },
-    {
       "title": "minting.noise_reduction_validator.mint",
       "redeemer": {
         "title": "redeemer",
@@ -79,16 +25,10 @@
           "schema": {
             "$ref": "#/definitions/ByteArray"
           }
-        },
-        {
-          "title": "_output_reference",
-          "schema": {
-            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
-          }
         }
       ],
-      "compiledCode": "588a0101002229800aba2aba1aab9faab9eaab9dab9a9bae003488888896600264653001300800198041804800cc0200092225980099b8748000c020dd500144cc896600266e1cdc68042408114a314a08048dd7180598049baa0025980099b8748000c020dd5001c56600260126ea800e29345900a4590074590070c020004c010dd5004452689b2b200401",
-      "hash": "02b2136674a1dbbd337b34e4cf03d4a83a5608746a1ab1e29e26ad7e"
+      "compiledCode": "5889010100229800aba2aba1aab9faab9eaab9dab9a9bae002488888896600264653001300800198041804800cc0200092225980099b8748000c020dd500144cc896600266e1cdc68042408114a314a08048dd7180598049baa0025980099b8748000c020dd5001c56600260126ea800e29345900a4590074590070c020004c010dd5004452689b2b20041",
+      "hash": "96d603fe232b1d0e3887604a2f64dd2c540a2dcfdda8bccbf51c80bc"
     },
     {
       "title": "minting.noise_reduction_validator.else",
@@ -101,24 +41,15 @@
           "schema": {
             "$ref": "#/definitions/ByteArray"
           }
-        },
-        {
-          "title": "_output_reference",
-          "schema": {
-            "$ref": "#/definitions/cardano~1transaction~1OutputReference"
-          }
         }
       ],
-      "compiledCode": "588a0101002229800aba2aba1aab9faab9eaab9dab9a9bae003488888896600264653001300800198041804800cc0200092225980099b8748000c020dd500144cc896600266e1cdc68042408114a314a08048dd7180598049baa0025980099b8748000c020dd5001c56600260126ea800e29345900a4590074590070c020004c010dd5004452689b2b200401",
-      "hash": "02b2136674a1dbbd337b34e4cf03d4a83a5608746a1ab1e29e26ad7e"
+      "compiledCode": "5889010100229800aba2aba1aab9faab9eaab9dab9a9bae002488888896600264653001300800198041804800cc0200092225980099b8748000c020dd500144cc896600266e1cdc68042408114a314a08048dd7180598049baa0025980099b8748000c020dd5001c56600260126ea800e29345900a4590074590070c020004c010dd5004452689b2b20041",
+      "hash": "96d603fe232b1d0e3887604a2f64dd2c540a2dcfdda8bccbf51c80bc"
     }
   ],
   "definitions": {
     "ByteArray": {
       "dataType": "bytes"
-    },
-    "Int": {
-      "dataType": "integer"
     },
     "Void": {
       "title": "Unit",
@@ -127,47 +58,6 @@
           "dataType": "constructor",
           "index": 0,
           "fields": []
-        }
-      ]
-    },
-    "cardano/transaction/OutputReference": {
-      "title": "OutputReference",
-      "description": "An `OutputReference` is a unique reference to an output on-chain. The `output_index`\n corresponds to the position in the output list of the transaction (identified by its id)\n that produced that output",
-      "anyOf": [
-        {
-          "title": "OutputReference",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "transaction_id",
-              "$ref": "#/definitions/ByteArray"
-            },
-            {
-              "title": "output_index",
-              "$ref": "#/definitions/Int"
-            }
-          ]
-        }
-      ]
-    },
-    "modules/types/MyRedeemer": {
-      "title": "MyRedeemer",
-      "anyOf": [
-        {
-          "title": "MyRedeemer",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "key",
-              "$ref": "#/definitions/ByteArray"
-            },
-            {
-              "title": "value",
-              "$ref": "#/definitions/Int"
-            }
-          ]
         }
       ]
     }

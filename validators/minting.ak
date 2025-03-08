@@ -6,10 +6,7 @@ use cardano/transaction.{OutputReference, Transaction}
 use modules/functions.{consume_utxo, mint_qty}
 use modules/types.{MyRedeemer}
 
-validator noise_reduction_validator(
-  ipfs_hash: ByteArray,
-  _output_reference: OutputReference,
-) {
+validator noise_reduction_validator(ipfs_hash: ByteArray) {
   mint(redeemer: Void, _policy_id: PolicyId, _tx: Transaction) {
     // Define the expected length of the IPFS hash (e.g., 32 bytes for SHA-256, 46 for Base58
     // // Check if the provided IPFS hash has the correct length
