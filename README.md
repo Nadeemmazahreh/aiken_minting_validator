@@ -1,6 +1,6 @@
 # Aiken Noise Monitoring Validator
 
-This showcase project contains 1 minting validators with two handlers:
+This showcase project contains minting validators with two handlers:
 
 - `Minting`
 - `Spending`
