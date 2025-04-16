@@ -1,6 +1,6 @@
 import { Accordion, AccordionItem } from "@heroui/accordion";
 import { Button } from "@heroui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { bytesToHex } from "ethereum-cryptography/utils";
 import { sha256 } from '@noble/hashes/sha2'; 
 
@@ -104,10 +104,17 @@ export default function Dashboard(props: {
   const [utxos, setUtxos] = useState<UTxO[]>([]);
   const [selectedToken, setSelectedToken] = useState<SelectedToken | null>(null);
   const [tokens, setTokens] = useState<SelectedToken[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'mint' | 'trade'>('mint');
 
   // Fetch UTXOs when component loads
+  useEffect(() => {
+    loadUtxos();
+  }, []);
+
   async function loadUtxos() {
     try {
+      setIsLoading(true);
       const walletUtxos = await lucid.utxosAt(address);
       setUtxos(walletUtxos);
       
@@ -151,45 +158,55 @@ export default function Dashboard(props: {
       setSelectedToken(null);
     } catch (error) {
       onError(error);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   async function submitTx(tx: TxSignBuilder) {
-    const txSigned = await tx.sign.withWallet().complete();
-    const txHash = await txSigned.submit();
-    return txHash;
+    setIsLoading(true);
+    try {
+      const txSigned = await tx.sign.withWallet().complete();
+      const txHash = await txSigned.submit();
+      return txHash;
+    } finally {
+      setIsLoading(false);
+    }
   }
   
   function generateNoiseData() {
+    setIsLoading(true);
     
-    // Generate noise data
-    const newNoiseData: NoiseData = {
-      timestamp: new Date().toISOString(),
-      noiseLevel: Math.floor(Math.random() * 56) + 45,
-      location: `${(Math.random() * 180 - 90).toFixed(4)}, ${(Math.random() * 360 - 180).toFixed(4)}`,
-      dataQuality: Math.floor(Math.random() * 56) + 45, 
-    };
+    setTimeout(() => {
+      // Generate noise data
+      const newNoiseData: NoiseData = {
+        timestamp: new Date().toISOString(),
+        noiseLevel: Math.floor(Math.random() * 56) + 45,
+        location: `${(Math.random() * 180 - 90).toFixed(4)}, ${(Math.random() * 360 - 180).toFixed(4)}`,
+        dataQuality: Math.floor(Math.random() * 56) + 45, 
+      };
 
-    // Create a string representation of the data to hash
-    const dataString = JSON.stringify({
-      timestamp: newNoiseData.timestamp,
-      noiseLevel: newNoiseData.noiseLevel,
-      location: newNoiseData.location,
-      dataQuality: newNoiseData.dataQuality
-    });
+      // Create a string representation of the data to hash
+      const dataString = JSON.stringify({
+        timestamp: newNoiseData.timestamp,
+        noiseLevel: newNoiseData.noiseLevel,
+        location: newNoiseData.location,
+        dataQuality: newNoiseData.dataQuality
+      });
 
-    // Generate SHA-256 hash
-    const hash = bytesToHex(sha256(new TextEncoder().encode(dataString)));
-    
-    // Add hash to noise data
-    newNoiseData.hash = hash;
-    
-    // Calculate token quantity based on quality
-    const quantity = calculateTokenQuantity(newNoiseData.dataQuality);
-    setTokenQuantity(quantity);
-    
-    setNoiseData(newNoiseData);
-    console.log(newNoiseData, "Token quantity:", quantity);
+      // Generate SHA-256 hash
+      const hash = bytesToHex(sha256(new TextEncoder().encode(dataString)));
+      
+      // Add hash to noise data
+      newNoiseData.hash = hash;
+      
+      // Calculate token quantity based on quality
+      const quantity = calculateTokenQuantity(newNoiseData.dataQuality);
+      setTokenQuantity(quantity);
+      
+      setNoiseData(newNoiseData);
+      setIsLoading(false);
+    }, 500); // Simulate processing time for better UX
   }
 
   type Action = (...args: any[]) => Promise<void>;
@@ -199,6 +216,8 @@ export default function Dashboard(props: {
     NoiseReduction: {
       mint: async () => {
         try {
+          setIsLoading(true);
+          
           if (!newNoiseData || !newNoiseData.hash) {
             onError("Please generate noise data first");
             return;
@@ -208,6 +227,7 @@ export default function Dashboard(props: {
             onError("Data quality too low (below 50). Cannot mint tokens.");
             return;
           }
+          
           const noisedatahash = newNoiseData!.hash;
           // Create the minting script with the hash parameter
           const mintingScript = applyParamsToScript(Script.Noise_reduction_validator, [noisedatahash!]);
@@ -234,15 +254,12 @@ export default function Dashboard(props: {
             ])
           );
           
-          
           // According to the docs, this is the correct format for mintAssets
           const mintedAssets = { [`${policyID}${fromText(assetName)}`]: quantity };
           
-
           // Get wallet UTXOs for spending
           const walletUtxos = await lucid.wallet().getUtxos();
           
-
           const tx = await lucid
             .newTx()
             .collectFrom(walletUtxos) // Collect from available wallet UTXOs
@@ -261,10 +278,6 @@ export default function Dashboard(props: {
             )
             .complete();
           
-          console.log("Here")
-          const unsignedTx = tx.toString();
-          console.log(unsignedTx);
-          
           submitTx(tx)
             .then((txHash) => {
               setActionResult(`Minted ${quantity} ${TOKEN_NAME} tokens based on data quality ${newNoiseData!.dataQuality}. TX: ${txHash}`);
@@ -273,14 +286,20 @@ export default function Dashboard(props: {
             .catch((error) => {
               console.error("Transaction submission error:", error);
               onError(`Transaction failed: ${error.message || error}`);
+            })
+            .finally(() => {
+              setIsLoading(false);
             });
         } catch (error) {
           console.error("Minting error:", error);
+          setIsLoading(false);
         }
       },
       
       spend: async (action: number) => {
         try {
+          setIsLoading(true);
+          
           if (!selectedToken) {
             onError("Please select a token to trade");
             return;
@@ -307,7 +326,7 @@ export default function Dashboard(props: {
               utxoRef // UTxO reference
             ])
           );
-          console.log("Here")
+          
           // Create the transaction
           const tx = await lucid
             .newTx()
@@ -319,18 +338,25 @@ export default function Dashboard(props: {
             .complete();
           
           // Submit transaction and handle response
-          submitTx(tx).then((txHash) => {
-            const actionMessages = {
-              0: `Listed ${Number(quantity)} ${readableName} tokens for sale at ${sellPrice} ADA`,
-              1: `Canceled listing for ${readableName} tokens`,
-              2: `Purchased ${readableName} tokens`
-            };
-            setActionResult(`${actionMessages[action as 0 | 1 | 2]}. TX: ${txHash}`);
-            loadUtxos();
-          }).catch((error) => {
-            onError(`Transaction failed: ${error.message || error}`);
-          });
+          submitTx(tx)
+            .then((txHash) => {
+              const actionMessages = {
+                0: `Listed ${Number(quantity)} ${readableName} tokens for sale at ${sellPrice} ADA`,
+                1: `Canceled listing for ${readableName} tokens`,
+                2: `Purchased ${readableName} tokens`
+              };
+              setActionResult(`${actionMessages[action as 0 | 1 | 2]}. TX: ${txHash}`);
+              loadUtxos();
+            })
+            .catch((error) => {
+              onError(`Transaction failed: ${error.message || error}`);
+            })
+            .finally(() => {
+              setIsLoading(false);
+            });
         } catch (error) {
+          console.error("Spend error:", error);
+          setIsLoading(false);
         }
       }
     },
@@ -348,129 +374,250 @@ export default function Dashboard(props: {
     return "text-green-400";
   }
 
-  return (
-    <div className="flex flex-col gap-2">
-      <span>{address}</span>
-      <span>"Mint and trade Noise Reduction Tokens (NRT) based on data quality"</span>
+  // Function to get gradient based on data quality
+  function getQualityGradient(quality: number): string {
+    if (quality < 50) return "from-red-500 to-red-700";
+    if (quality < 60) return "from-red-400 to-orange-500";
+    if (quality < 70) return "from-orange-400 to-yellow-500";
+    if (quality < 80) return "from-yellow-400 to-blue-400";
+    if (quality < 90) return "from-blue-400 to-blue-600";
+    if (quality < 95) return "from-blue-500 to-indigo-500";
+    if (quality < 99) return "from-indigo-500 to-purple-500";
+    return "from-purple-500 to-pink-500";
+  }
 
-      {/* Noise Data Generation Section */}
-      <div className="bg-black p-4 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-3">Noise Data Generator</h3>
-        <Button
-          className="bg-gradient-to-tr from-blue-500 to-purple-500 text-white shadow-lg capitalize mb-3"
-          radius="full"
-          onPress={generateNoiseData}
+  return (
+    <div className="flex flex-col gap-4 p-6 max-w-4xl mx-auto bg-slate-50 dark:bg-slate-900 rounded-xl shadow-xl">
+      {/* Header */}
+      <div className="text-center mb-4">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Noise Reduction Token Dashboard</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Wallet: {address.slice(0, 8)}...{address.slice(-8)}</p>
+      </div>
+      
+      {/* Tab Navigation */}
+      <div className="flex mb-6 border-b border-slate-200 dark:border-slate-700">
+        <button
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'mint' 
+              ? 'text-slate-800 dark:text-slate-200 border-b-2 border-blue-500' 
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+          onClick={() => setActiveTab('mint')}
         >
-          Generate Random Noise Data
-        </Button>
-        
-        {newNoiseData && (
-          <div className="bg-black-50 p-3 rounded-md">
-            <p>Timestamp: {newNoiseData.timestamp}</p>
-            <p>Noise Level: {newNoiseData.noiseLevel} dB</p>
-            <p>Location: {newNoiseData.location}</p>
-            <p className="break-all">Data Hash: {newNoiseData.hash}</p>
-            
-            {/* Data Quality Information */}
-            <p className={`font-semibold ${getQualityColor(newNoiseData.dataQuality)}`}>
-              Data Quality: {newNoiseData.dataQuality} - {getQualityTier(newNoiseData.dataQuality)} Quality
-            </p>
-            
-            <p className="font-semibold mt-2">
-              {newNoiseData.dataQuality < 50 ? (
-                <span className="text-red-500">Quality too low for minting</span>
-              ) : (
-                <span className="text-green-500">Eligible to mint {tokenQuantity} {TOKEN_NAME} tokens</span>
-              )}
-            </p>
-          </div>
-        )}
+          Mint Tokens
+        </button>
+        <button
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'trade' 
+              ? 'text-slate-800 dark:text-slate-200 border-b-2 border-blue-500' 
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+          onClick={() => setActiveTab('trade')}
+        >
+          Manage Tokens
+        </button>
       </div>
 
-      <Accordion variant="splitted">
-        {/* Minting NRT */}
-        <AccordionItem key="1" aria-label="Mint NRT" title="Mint Noise Reduction Tokens">
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="mb-4 p-3 bg-black-50 rounded">
-              <h4 className="font-semibold">Token Quantity Rules:</h4>
-              <ul className="list-disc pl-5 mt-2">
-                <li>Data quality &lt; 50: Cannot mint (insufficient quality)</li>
-                <li>Data quality 50-59: 10 tokens (Minimal Quality)</li>
-                <li>Data quality 60-69: 15 tokens (Low Quality)</li>
-                <li>Data quality 70-79: 20 tokens (Basic Quality)</li>
-                <li>Data quality 80-89: 35 tokens (Good Quality)</li>
-                <li>Data quality 90-94: 45 tokens (Very Good Quality)</li>
-                <li>Data quality 95-98: 60 tokens (Excellent Quality)</li>
-                <li>Data quality 99-100: 100 tokens (Perfect Quality)</li>
-              </ul>
-            </div>
-            
-            <Button
-              className="bg-gradient-to-tr from-green-500 to-blue-500 text-white shadow-lg capitalize"
-              radius="full"
-              onPress={actions.NoiseReduction.mint}
-              isDisabled={!newNoiseData || newNoiseData.dataQuality < 50}
-            >
-              Mint {TOKEN_NAME}
-            </Button>
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-t-blue-500 border-slate-200 rounded-full animate-spin mb-4"></div>
+            <p className="text-slate-700 dark:text-slate-300">Processing...</p>
           </div>
-        </AccordionItem>
-        
-        {/* Trading NRT */}
-        <AccordionItem key="2" aria-label="Trade NRT" title="Trade Noise Reduction Tokens">
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex gap-2 items-center">
-              <label>Price (ADA):</label>
-              <input 
-                type="number" 
-                value={sellPrice}
-                onChange={(e) => setSellPrice(parseFloat(e.target.value))}
-                className="max-w-xs p-2 border rounded"
-              />
-            </div>
+        </div>
+      )}
+
+      {activeTab === 'mint' && (
+        <>
+          {/* Noise Data Generation Section */}
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+            <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">Noise Data Collection</h3>
             
-            <Button
-              className="bg-gradient-to-tr from-blue-500 to-pink-500 text-white shadow-lg capitalize"
-              radius="full"
-              onPress={loadUtxos}
-            >
-              Load My Tokens
-            </Button>
+            <div className="flex flex-col gap-4">
+              <p className="text-slate-600 dark:text-slate-400">
+                Generate random noise data for minting Noise Reduction Tokens (NRT).
+                Higher quality data will earn more tokens.
+              </p>
+              
+              <Button
+                className="bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 text-white shadow-lg capitalize w-full md:w-auto self-start"
+                radius="lg"
+                onPress={generateNoiseData}
+                disabled={isLoading}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Generate Random Noise Data</span>
+                </div>
+              </Button>
+              
+              {newNoiseData && (
+                <div className="mt-2 p-5 rounded-lg bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 transition-all">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Timestamp</p>
+                      <p className="font-mono text-slate-700 dark:text-slate-300">{new Date(newNoiseData.timestamp).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Noise Level</p>
+                      <p className="font-mono text-slate-700 dark:text-slate-300">{newNoiseData.noiseLevel} dB</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Location</p>
+                      <p className="font-mono text-slate-700 dark:text-slate-300">{newNoiseData.location}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Data Quality</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2 w-full rounded-full bg-gradient-to-r ${getQualityGradient(newNoiseData.dataQuality)}`}>
+                          <div 
+                            className="h-full bg-white rounded-full" 
+                            style={{ width: `${100 - newNoiseData.dataQuality}%`, marginLeft: `${newNoiseData.dataQuality}%` }}
+                          ></div>
+                        </div>
+                        <span className={`font-semibold ${getQualityColor(newNoiseData.dataQuality)}`}>
+                          {newNoiseData.dataQuality}%
+                        </span>
+                      </div>
+                      <p className={`text-sm ${getQualityColor(newNoiseData.dataQuality)}`}>
+                        {getQualityTier(newNoiseData.dataQuality)} Quality
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Data Hash</p>
+                    <p className="font-mono text-xs break-all text-slate-700 dark:text-slate-300">{newNoiseData.hash}</p>
+                  </div>
+                  
+                  <div className="mt-4 p-3 rounded-lg bg-slate-200 dark:bg-slate-700 flex flex-col md:flex-row justify-between items-center">
+                    {newNoiseData.dataQuality < 50 ? (
+                      <div className="flex items-center gap-2 text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        <span className="font-semibold">Quality too low for minting</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-green-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="font-semibold">Eligible to mint {tokenQuantity} NRT tokens</span>
+                      </div>
+                    )}
+                    
+                    <Button
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg capitalize mt-3 md:mt-0"
+                      radius="lg"
+                      onPress={actions.NoiseReduction.mint}
+                      disabled={isLoading || !newNoiseData || newNoiseData.dataQuality < 50}
+                    >
+                      Mint Tokens
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Token Quantity Rules */}
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg mt-4">
+            <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">Token Quantity Rules</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30">
+                <div className="h-2 w-full rounded-full bg-gradient-to-r from-red-500 to-red-700 mb-2"></div>
+                <p className="font-medium text-red-700 dark:text-red-400">Below 50%</p>
+                <p className="text-sm text-red-600 dark:text-red-400">0 tokens</p>
+                <p className="text-xs text-red-500 dark:text-red-400 mt-1">Insufficient Quality</p>
+              </div>
+              <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/30">
+                <div className="h-2 w-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-700 mb-2"></div>
+                <p className="font-medium text-yellow-700 dark:text-yellow-400">50-79%</p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">10-20 tokens</p>
+                <p className="text-xs text-yellow-500 dark:text-yellow-400 mt-1">Basic Quality</p>
+              </div>
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30">
+                <div className="h-2 w-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 mb-2"></div>
+                <p className="font-medium text-blue-700 dark:text-blue-400">80-94%</p>
+                <p className="text-sm text-blue-600 dark:text-blue-400">35-45 tokens</p>
+                <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Good Quality</p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30">
+                <div className="h-2 w-full rounded-full bg-gradient-to-r from-green-500 to-green-700 mb-2"></div>
+                <p className="font-medium text-green-700 dark:text-green-400">95-100%</p>
+                <p className="text-sm text-green-600 dark:text-green-400">60-100 tokens</p>
+                <p className="text-xs text-green-500 dark:text-green-400 mt-1">Excellent Quality</p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'trade' && (
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+          <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">Manage Tokens</h3>
+          
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-slate-700 dark:text-slate-300">Price (ADA):</label>
+                <input 
+                  type="number" 
+                  value={sellPrice}
+                  min="1"
+                  onChange={(e) => setSellPrice(parseFloat(e.target.value))}
+                  className="w-24 p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <Button
+                className="bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 text-white shadow-lg capitalize"
+                radius="lg"
+                onPress={loadUtxos}
+                disabled={isLoading}
+              >
+                {tokens.length > 0 ? 'Refresh Tokens' : 'Load My Tokens'}
+              </Button>
+            </div>
 
             {tokens.length > 0 ? (
               <div className="mt-2">
-                <h4 className="font-semibold mb-2">Select Token to Trade:</h4>
-                <div className="max-h-60 overflow-y-auto">
+                <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">My Tokens</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
                   {tokens.map((token, index) => (
                     <div 
                       key={index} 
-                      className={`p-3 mb-1 border rounded cursor-pointer ${
+                      className={`p-4 rounded-lg transition-all cursor-pointer ${
                         selectedToken?.unit === token.unit && 
                         selectedToken.utxo.txHash === token.utxo.txHash && 
                         selectedToken.utxo.outputIndex === token.utxo.outputIndex 
-                          ? 'border-blue-500 bg-blue-100 dark:bg-blue-900 dark:border-blue-400' 
-                          : 'border-gray-300 hover:border-blue-300'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 dark:border-blue-400 shadow-md' 
+                          : 'bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500'
                       }`}
                       onClick={() => {
                         setSelectedUtxo(token.utxo);
                         setSelectedToken(token);
                       }}
                     >
-                      <div className="flex justify-between">
+                      <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-sm font-medium">
+                          <p className="font-medium text-slate-800 dark:text-slate-200">
                             {token.readableName || "Unnamed Token"}
                           </p>
-                          <p className="text-xs mt-1">
-                            Quantity: <span className="font-semibold">{token.quantity.toString()}</span>
-                          </p>
-                          <p className="text-xs mt-1">
-                            UTXO: <span className="opacity-75">{token.utxo.txHash.slice(0, 10)}...#{token.utxo.outputIndex}</span>
-                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs px-2 py-1 rounded-full">
+                              {token.quantity.toString()} tokens
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              UTXO: {token.utxo.txHash.slice(0, 6)}...#{token.utxo.outputIndex}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-xs text-right opacity-75">
+                        <div className="text-xs text-right text-slate-500 dark:text-slate-400">
                           <p>Policy ID:</p>
-                          <p>{formatPolicyId(token.policyId)}</p>
+                          <p className="font-mono">{formatPolicyId(token.policyId)}</p>
                         </div>
                       </div>
                     </div>
@@ -478,51 +625,94 @@ export default function Dashboard(props: {
                 </div>
               </div>
             ) : (
-              <p className="text-sm opacity-75 mt-2">No tokens found. Click "Load My Tokens" to refresh.</p>
+              <div className="text-center p-8 bg-slate-50 dark:bg-slate-700 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
+                <p className="text-slate-500 dark:text-slate-400">No tokens found in your wallet</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                  Mint some tokens first or click "Load My Tokens" to refresh
+                </p>
+              </div>
             )}
 
             {selectedToken && (
-              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900 rounded">
-                <h4 className="font-semibold">Selected Token:</h4>
-                <p>Name: {selectedToken.readableName}</p>
-                <p>Quantity: {selectedToken.quantity.toString()}</p>
-                <p>Policy ID: {formatPolicyId(selectedToken.policyId)}</p>
+              <div className="mt-4 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
+                <h4 className="font-semibold text-slate-800 dark:text-slate-200">Selected Token</h4>
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Name</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{selectedToken.readableName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Quantity</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{selectedToken.quantity.toString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Policy ID</p>
+                    <p className="font-mono text-xs text-slate-800 dark:text-slate-200">{selectedToken.policyId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Current Price</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{sellPrice} ADA</p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Button
+                    className="bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-lg capitalize"
+                    radius="lg"
+                    onPress={() => actions.NoiseReduction.spend(0)} // 0 = sell
+                    disabled={isLoading}
+                  >
+                    List for Sale
+                  </Button>
+                  
+                  <Button
+                    className="bg-gradient-to-r from-slate-600 to-slate-800 text-white shadow-lg capitalize"
+                    radius="lg"
+                    onPress={() => actions.NoiseReduction.spend(1)} // 1 = cancel
+                    disabled={isLoading}
+                  >
+                    Cancel Listing
+                  </Button>
+                  
+                  <Button
+                    className="bg-gradient-to-r from-green-500 to-teal-600 text-white shadow-lg capitalize"
+                    radius="lg"
+                    onPress={() => actions.NoiseReduction.spend(2)} // 2 = buy
+                    disabled={isLoading}
+                  >
+                    Buy Token
+                  </Button>
+                </div>
               </div>
             )}
-            
-            {/* <div className="flex flex-wrap gap-2 mt-2">
-              <Button
-                className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg capitalize"
-                radius="full"
-                onPress={() => actions.NoiseReduction.spend(0)} // 0 = sell
-                isDisabled={!selectedToken}
-              >
-                {selectedToken 
-                  ? `Sell ${selectedToken.quantity.toString()} ${selectedToken.readableName}` 
-                  : "Sell Token"}
-              </Button>
-              
-              <Button
-                className="bg-gradient-to-tr from-red-500 to-orange-500 text-white shadow-lg capitalize"
-                radius="full"
-                onPress={() => actions.NoiseReduction.spend(1)} // 1 = cancel
-                isDisabled={!selectedToken}
-              >
-                Cancel Listing
-              </Button>
-              
-              <Button
-                className="bg-gradient-to-tr from-green-500 to-teal-500 text-white shadow-lg capitalize"
-                radius="full"
-                onPress={() => actions.NoiseReduction.spend(2)} // 2 = buy
-                isDisabled={!selectedToken}
-              >
-                Buy Token
-              </Button>
-            </div> */}
           </div>
-        </AccordionItem>
-      </Accordion>
+        </div>
+      )}
+      
+      {/* Footer with concentric circles design inspired by the image */}
+      <div className="relative mt-6 h-32 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center">
+          {[...Array(12)].map((_, i) => (
+            <div 
+              key={i}
+              className="absolute rounded-full border border-slate-300 dark:border-slate-700"
+              style={{
+                width: `${(i + 1) * 20}px`,
+                height: `${(i + 1) * 20}px`,
+                opacity: 1 - i * 0.07,
+              }}
+            ></div>
+          ))}
+        </div>
+        <div className="relative z-10 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Noise Reduction Token Platform
+          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            Cardano Blockchain | Powered by Lucid
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
